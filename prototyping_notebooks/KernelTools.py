@@ -10,7 +10,7 @@ from tqdm.auto import tqdm
 
 def get_gaussianRBF(gamma):
     def f(x,y):
-        return jnp.exp(-jnp.sum((x-y)**2)/gamma)
+        return jnp.exp(-jnp.sum((x-y)**2)/gamma**2)
     return f
 
 def get_anisotropic_gaussianRBF(gamma,A):
