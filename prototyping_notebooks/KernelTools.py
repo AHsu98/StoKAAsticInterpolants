@@ -1,7 +1,5 @@
 import jax.numpy as jnp
 from jax import jit,grad,hessian,jacfwd
-from jax.config import config
-config.update("jax_enable_x64", True)
 import numpy as np
 import matplotlib.pyplot as plt
 import jax
@@ -10,7 +8,7 @@ from tqdm.auto import tqdm
 
 def get_gaussianRBF(gamma):
     def f(x,y):
-        return jnp.exp(-jnp.sum((x-y)**2)/gamma**2)
+        return jnp.exp(-jnp.sum((x-y)**2)/(2*gamma**2))
     return f
 
 def get_anisotropic_gaussianRBF(gamma,A):
