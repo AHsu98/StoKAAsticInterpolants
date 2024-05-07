@@ -1,0 +1,2 @@
+conda install pip
+pip install jax jaxlib matplotlib equinox jupyter ipykernel optax diffrax tqdm
