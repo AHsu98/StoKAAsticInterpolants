@@ -1,5 +1,6 @@
-import jax.numpy as jnp
+import jax
 from jax import grad,vmap
+import jax.numpy as jnp
 
 def get_trig_interpolants():
     def I(t,x,y):

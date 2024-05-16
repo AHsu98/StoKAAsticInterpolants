@@ -4,11 +4,9 @@ setup(
     name="stochastic_interpolants",
     version="0.1.0",
     py_modules=[
-        "LM_Solve",
-        "KernelTools",
-        "BurgerSolver",
-        "darcySolver",
-        "HessAnalyze",
-        "Kernels"
+        "neural_network",
+        "dataloaders",
+        "data_generators",
+        "loss_functions",
         ]
 )

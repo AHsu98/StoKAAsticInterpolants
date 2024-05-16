@@ -13,7 +13,7 @@ class NeuralNetwork(eqx.Module):
             [eqx.nn.Linear(layer_in_size,layer_out_size,key = layer_key) for layer_in_size,layer_out_size,layer_key in zip(layer_sizes[:-1],layer_sizes[1:],keys[1:-1])] + 
             [eqx.nn.Linear(layer_sizes[-1],output_size,key = keys[-1])]
         )
-        self.extra_bias = jax.numpy.randn(output_size)
+        self.extra_bias = jax.numpy.zeros(output_size)
 
     def __call__(self, x):
         for layer in self.layers[:-1]:
