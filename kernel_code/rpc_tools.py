@@ -1,6 +1,5 @@
 import jax.numpy as jnp
 
-
 def rpc_pivot(remaining,d,A,key):
     return jnp.random.choice(remaining,p = d[remaining]/jnp.sum(d[remaining]))
 
