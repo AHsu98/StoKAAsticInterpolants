@@ -26,7 +26,9 @@ class StochasticSampler():
         X0,
         eps = 0.1,
         solver = Heun(),
-        dt0 = 1e-2
+        saveat = SaveAt(dense=True),
+        dt0 = 1e-2,
+        max_steps = 20000
     ):
         def epsilon(t):
             return self.base_epsilon_func(t)*eps
@@ -40,7 +42,7 @@ class StochasticSampler():
         diffusion = lambda t, x, args: jnp.sqrt(2*epsilon(t))
         brownian_motion = VirtualBrownianTree(t0, t1, tol=1e-6, shape=X0.shape, key=jax.random.PRNGKey(103))
         terms = MultiTerm(ODETerm(dX_t), WeaklyDiagonalControlTerm(diffusion, brownian_motion))
-        saveat = SaveAt(dense=True)
-        sol = diffeqsolve(terms, solver, t0, t1, dt0=dt0, y0=X0, saveat=saveat)
+        
+        sol = diffeqsolve(terms, solver, t0, t1, dt0=dt0, y0=X0, saveat=saveat,max_steps = max_steps)
         X = sol.evaluate(1.0)
         return X,sol
