@@ -8,5 +8,6 @@ setup(
         "dataloaders",
         "data_generators",
         "loss_functions",
+        "sampler"
         ]
 )
