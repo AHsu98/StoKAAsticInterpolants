@@ -37,11 +37,11 @@ def train_model(
         updates, opt_state = optim.update(grads,opt_state,model)
         model = eqx.apply_updates(model, updates)
         return model, opt_state, loss_value
-    train_losses = []
+    train_losses = jnp.zeros(steps)
     
     for step, (t,x,y,z) in zip(tqdm(range(steps)), train_loader):
         model, opt_state, train_loss = make_step(model, opt_state, t,x,y,z)
-        train_losses.append(train_loss)
+        train_losses = train_losses.at[step].set(train_loss)
         if jnp.isnan(train_loss):
             print("Nan Obtained")
         if (step % print_every) == 0 or (step == steps - 1):
