@@ -1,7 +1,7 @@
 from diffrax import (
     diffeqsolve, ODETerm, Dopri5, ControlTerm, 
     Euler, MultiTerm, ODETerm, SaveAt, VirtualBrownianTree, Heun,
-    WeaklyDiagonalControlTerm,
+    WeaklyDiagonalControlTerm,PIDController
 )
 import jax
 import equinox as eqx
@@ -28,7 +28,8 @@ class StochasticSampler():
         solver = Heun(),
         saveat = SaveAt(dense=True),
         dt0 = 1e-2,
-        max_steps = 20000
+        max_steps = 20000,
+        tol = 1e-2
     ):
         def epsilon(t):
             return self.base_epsilon_func(t)*eps
@@ -43,6 +44,13 @@ class StochasticSampler():
         brownian_motion = VirtualBrownianTree(t0, t1, tol=1e-6, shape=X0.shape, key=jax.random.PRNGKey(103))
         terms = MultiTerm(ODETerm(dX_t), WeaklyDiagonalControlTerm(diffusion, brownian_motion))
         
-        sol = diffeqsolve(terms, solver, t0, t1, dt0=dt0, y0=X0, saveat=saveat,max_steps = max_steps)
-        X = sol.evaluate(1.0)
-        return X,sol
+        
+        if saveat.dense is True:
+            sol = diffeqsolve(terms, solver, t0, t1, dt0=dt0, y0=X0, saveat=saveat,max_steps = max_steps)
+            X1 = sol.evaluate(1.0)
+        else:
+            stepsize_controller = PIDController(rtol=tol, atol=tol)
+            sol = diffeqsolve(terms, solver, t0, t1, dt0=dt0, y0=X0, 
+                              saveat=saveat,max_steps = max_steps,stepsize_controller = stepsize_controller)
+            X1 = sol.ys[-1]
+        return X1,sol
