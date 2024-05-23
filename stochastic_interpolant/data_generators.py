@@ -60,9 +60,10 @@ def rand_diag_covar(N):
 
 
 # Dataset iterator
-def inf_train_gen(data, rng=None, batch_size=200):
-    if rng is None:
-        rng = np.random.RandomState()
+def inf_train_gen(data, rng=None, batch_size=200,seed = None):
+    if seed is not None:
+        np.random.seed(seed)
+    rng = np.random.RandomState()
 
     if data == "swissroll":
         data = sklearn.datasets.make_swiss_roll(n_samples=batch_size, noise=1.0)[0]
@@ -478,8 +479,6 @@ def sample_torus(N, n_grid = 333, eps_scale = .01):
     noise = eps_scale * np.random.random(torus_points.shape)
 
     return torus_points + noise
-
-
 
 def sample_x_torus(N, x = 0, eps_scale = .01, eps = .01):
     target_gen = lambda N: normalize(sample_torus(N, eps_scale=eps_scale))

@@ -38,7 +38,9 @@ def train_model(
         model = eqx.apply_updates(model, updates)
         return model, opt_state, loss_value
     train_losses = jnp.zeros(steps)
-    
+
+    num_test_rounds = 0
+    test_losses = jnp.zeros(steps//print_every + 2)
     for step, (t,x,y,z) in zip(tqdm(range(steps)), train_loader):
         model, opt_state, train_loss = make_step(model, opt_state, t,x,y,z)
         train_losses = train_losses.at[step].set(train_loss)
@@ -47,6 +49,8 @@ def train_model(
         if (step % print_every) == 0 or (step == steps - 1):
             testloader = testloader_factory()
             test_loss = evaluate_test_loss(model, testloader,loss_fun,num_testloader_batches)
+            test_losses = test_losses.at[num_test_rounds].set(test_loss)
+            num_test_rounds += 1
             print("step=" + str(step) + " | train_loss=" + str(train_loss) + " | test_loss= "+ str(test_loss))
 
     return model,train_losses
