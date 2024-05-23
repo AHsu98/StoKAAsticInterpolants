@@ -1,4 +1,4 @@
-from neural_network import NeuralNetwork
+from stochastic_interpolant.neural_network import NeuralNetwork
 import jax
 import optax
 from jax import grad, vmap
