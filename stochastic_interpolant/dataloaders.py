@@ -46,7 +46,7 @@ class OTCouplingSampler(Sampler):
         rkey, _ = jax.random.split(key)
         ref_batch = self.ReferenceSampler.sample_batch(batch_size, rkey)
         int_target_batch = self.TargetSampler.sample_batch(batch_size,rkey)
-        target_batch = OT_plan(ref_batch, int_target_batch)
+        target_batch = OT_plan(ref_batch, int_target_batch, batch_size)
         return ref_batch, target_batch
 
 def build_base_trainloader(batch_size,input_key,couplingSampler):
@@ -81,8 +81,8 @@ def testloader_factory(batch_size,input_key,couplingSampler,num_batches = 100):
 
 solve_fn = jax.jit(solve)
 
-def OT_plan(xs,xt):
+def OT_plan(xs, xt, batch_size):
     geom = pointcloud.PointCloud(xs, xt)
     # ot_prob = linear_problem.LinearProblem(geom)
     ot = solve_fn(geom)
-    return ot.matrix@xt
+    return ot.matrix@xt*batch_size
