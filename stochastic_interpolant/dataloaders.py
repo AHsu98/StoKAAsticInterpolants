@@ -37,18 +37,6 @@ class IndependenceCouplingSampler(Sampler):
         rkey,tkey = jax.random.split(key)
         return self.ReferenceSampler.sample_batch(batch_size,rkey),self.TargetSampler.sample_batch(batch_size,rkey)
     
-class OTCouplingSampler(Sampler):
-    def __init__(self, ReferenceSampler, TargetSampler):
-        self.ReferenceSampler = ReferenceSampler
-        self.TargetSampler = TargetSampler
-    
-    def sample_batch(self, batch_size, key):
-        rkey, _ = jax.random.split(key)
-        ref_batch = self.ReferenceSampler.sample_batch(batch_size, rkey)
-        int_target_batch = self.TargetSampler.sample_batch(batch_size,rkey)
-        target_batch = OT_plan(ref_batch, int_target_batch, batch_size)
-        return ref_batch, target_batch
-
 def build_base_trainloader(batch_size,input_key,couplingSampler):
     key,subkey = jax.random.split(input_key)
     while True:
@@ -79,10 +67,51 @@ def testloader_factory(batch_size,input_key,couplingSampler,num_batches = 100):
             yield self_stack(t_vals),self_stack(ref_batch),self_stack(target_batch),jnp.vstack([z,-z])
     return get_testloader
 
+def sample_from_row(key,probs):
+    return jax.random.choice(key,jnp.arange(len(probs)),p = probs)
+
+mat_sample = jax.jit(jax.vmap(sample_from_row,in_axes=(0,0)))
+
+def solve_sample_ot(key,ref,target):
+    geom = pointcloud.PointCloud(ref, target)
+    ot = solve_fn(geom)
+    ot_keys = jax.random.split(key,len(ot.matrix))
+    return target[mat_sample(ot_keys,ot.matrix)]
+
+
+
+class OTCouplingSampler(Sampler):
+    def __init__(self, ReferenceSampler, TargetSampler,ot_batch_size  = 200):
+        self.ReferenceSampler = ReferenceSampler
+        self.TargetSampler = TargetSampler
+        self.ot_batch_size = 200
+    
+    def sample_batch(self, batch_size, key):
+        rkey,tkey, ot_key = jax.random.split(key,3)
+        ref_batch = self.ReferenceSampler.sample_batch(batch_size, rkey)
+        int_target_batch = self.TargetSampler.sample_batch(batch_size,tkey)
+
+        target_batch = solve_sample_ot(ot_key,ref_batch,int_target_batch)
+        return ref_batch, target_batch
+
 solve_fn = jax.jit(solve)
 
 def OT_plan(xs, xt, batch_size):
+    "This is the old way we were doing it"
     geom = pointcloud.PointCloud(xs, xt)
     # ot_prob = linear_problem.LinearProblem(geom)
     ot = solve_fn(geom)
     return ot.matrix@xt*batch_size
+
+class OldOTCouplingSampler(Sampler):
+    """This oversmooothes the data, wrong way of doing this"""
+    def __init__(self, ReferenceSampler, TargetSampler):
+        self.ReferenceSampler = ReferenceSampler
+        self.TargetSampler = TargetSampler
+    
+    def sample_batch(self, batch_size, key):
+        rkey, _ = jax.random.split(key)
+        ref_batch = self.ReferenceSampler.sample_batch(batch_size, rkey)
+        int_target_batch = self.TargetSampler.sample_batch(batch_size,rkey)
+        target_batch = OT_plan(ref_batch, int_target_batch, batch_size)
+        return ref_batch, target_batch
