@@ -32,17 +32,27 @@ def zero_gamma(t):
 def zero_gammadot(t):
     return 0*t
 
+def loss_pieces(I,It,gamma,gammadot):
+    def input_values(t,x,y,z):
+        return jnp.hstack([t.reshape(-1,1),I(t,x,y)+gamma(t)*z])
+    def v_term(t,x,y,z):
+        return (It(t,x,y) + gammadot(t)*z)
+    return input_values,v_term
+
 def get_loss_functions(I,It,gamma,gammadot):
+    get_func_inputs,v_term = loss_pieces(I,It,gamma,gammadot)
+
     def loss_b(b_model, t, x, y, z):
-        tx = jnp.hstack([t.reshape(-1,1),I(t,x,y)+gamma(t)*z])
-        bhat = jax.vmap(b_model)(tx)  # vectorise the model over a batch of data
+        tI = get_func_inputs(t,x,y,z)
+        v = v_term(t,x,y,z)
+        bhat = jax.vmap(b_model)(tI)  # vectorise the model over a batch of data
         bnorm2 = jnp.mean(jnp.sum(bhat**2,axis=1))
-        dot_term = jnp.mean(jnp.sum((It(t,x,y) + gammadot(t)*z)*bhat,axis=1))
+        dot_term = jnp.mean(jnp.sum(v*bhat,axis=1))
         return bnorm2 - 2*dot_term
 
     def loss_denoise(eta_model,t,x,y,z):
-        tx = jnp.hstack([t.reshape(-1,1),I(t,x,y)+gamma(t)*z])
-        etahat = jax.vmap(eta_model)(tx)  # vectorise the model over a batch of data
+        tI = get_func_inputs(t,x,y,z)
+        etahat = jax.vmap(eta_model)(tI)  # vectorise the model over a batch of data
         etanorm2 = jnp.mean(jnp.sum(etahat**2,axis=1))
         dot_term = jnp.mean(jnp.sum(etahat*z,axis=1))
         return etanorm2 - 2*dot_term

@@ -78,4 +78,4 @@ def lazy_pivoted_partial_cholesky(X,k,k_pivots,tol = 1e-5,seed = 203):
         chosen_pivots.append(pivot)
         trace_history.append(jnp.sum(d))
 
-    return F,chosen_pivots,d,jnp.array(trace_history)
+    return F,jnp.array(chosen_pivots),d,jnp.array(trace_history)
