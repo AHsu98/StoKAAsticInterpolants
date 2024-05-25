@@ -1,5 +1,10 @@
 import jax.numpy as jnp
 import jax
+import ott
+from ott.geometry import costs, pointcloud
+from ott.problems.linear import linear_problem
+from ott.solvers.linear import sinkhorn, solve
+import numpy as np
 from abc import ABC,abstractmethod
 
 def self_stack(x):
@@ -31,6 +36,18 @@ class IndependenceCouplingSampler(Sampler):
     def sample_batch(self,batch_size,key):
         rkey,tkey = jax.random.split(key)
         return self.ReferenceSampler.sample_batch(batch_size,rkey),self.TargetSampler.sample_batch(batch_size,rkey)
+    
+class OTCouplingSampler(Sampler):
+    def __init__(self, ReferenceSampler, TargetSampler):
+        self.ReferenceSampler = ReferenceSampler
+        self.TargetSampler = TargetSampler
+    
+    def sample_batch(self, batch_size, key):
+        rkey, _ = jax.random.split(key)
+        ref_batch = self.ReferenceSampler.sample_batch(batch_size, rkey)
+        int_target_batch = self.TargetSampler.sample_batch(batch_size,rkey)
+        target_batch = OT_plan(ref_batch, int_target_batch, batch_size)
+        return ref_batch, target_batch
 
 def build_base_trainloader(batch_size,input_key,couplingSampler):
     key,subkey = jax.random.split(input_key)
@@ -61,3 +78,11 @@ def testloader_factory(batch_size,input_key,couplingSampler,num_batches = 100):
             t_vals,ref_batch,target_batch,z = next(base_loader)
             yield self_stack(t_vals),self_stack(ref_batch),self_stack(target_batch),jnp.vstack([z,-z])
     return get_testloader
+
+solve_fn = jax.jit(solve)
+
+def OT_plan(xs, xt, batch_size):
+    geom = pointcloud.PointCloud(xs, xt)
+    # ot_prob = linear_problem.LinearProblem(geom)
+    ot = solve_fn(geom)
+    return ot.matrix@xt*batch_size
