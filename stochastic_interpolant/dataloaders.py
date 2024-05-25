@@ -81,10 +81,9 @@ def solve_sample_ot(key,ref,target):
 
 
 class OTCouplingSampler(Sampler):
-    def __init__(self, ReferenceSampler, TargetSampler,ot_batch_size  = 200):
+    def __init__(self, ReferenceSampler, TargetSampler):
         self.ReferenceSampler = ReferenceSampler
         self.TargetSampler = TargetSampler
-        self.ot_batch_size = 200
     
     def sample_batch(self, batch_size, key):
         rkey,tkey, ot_key = jax.random.split(key,3)
