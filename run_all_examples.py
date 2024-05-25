@@ -62,7 +62,7 @@ def train_models(
     Trains with our default hyperparameters
     """
     learning_rate = 4e-3
-    num_steps = 60000
+    num_steps = 120000
 
     scheduler = optax.piecewise_constant_schedule(
     learning_rate,
@@ -194,7 +194,7 @@ def run_example(example_name):
 
 
     stochastic_sampler = StochasticSampler(gamma,b_model,eta_model)
-    eps_vals = [0,1e-3,0.025,0.1,0.25,0.5,1.,2.,3.,5.,10.,15.,25.]
+    eps_vals = [0,1e-3,0.025,0.1,0.25,0.5,1.,2.,3.,5.,7.5,10.,12.5,15.,17.5,20,22.5,25.]
 
     target_resample = inf_train_gen(example_name,rng = 123,batch_size = 10000,seed = 138)
 
@@ -209,7 +209,7 @@ def run_example(example_name):
     plt.xlabel("eps")
     plt.ylabel("MMD")
     plt.title(f"{example_name} MMD for different diffusion levels")
-    plt.savefig(f"all_figures/{example_name}/mmd.png")
+    plt.savefig(f"all_figures/{example_name}/mmd.png",bbox_inches='tight')
     plt.close()
 
 examples_to_run = [
