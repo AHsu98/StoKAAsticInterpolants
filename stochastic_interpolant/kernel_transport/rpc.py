@@ -39,7 +39,7 @@ def sample_pivot(key,values,probs):
     return jax.random.choice(key,values,p = probs)
 
 
-def lazy_pivoted_partial_cholesky(X,k,k_pivots,tol = 1e-5,seed = 203):
+def lazy_pivoted_partial_cholesky(X,k,k_pivots,tol = 1e-3,seed = 203):
     N = len(X)
     all_inds = jnp.arange(N)
     k_pivots = int(jnp.minimum(N,k_pivots))
@@ -56,6 +56,7 @@ def lazy_pivoted_partial_cholesky(X,k,k_pivots,tol = 1e-5,seed = 203):
 
     key = jax.random.PRNGKey(seed)
     subkeys = jax.random.split(key,k_pivots)
+    init_trace = jnp.sum(d)
 
     @jax.jit
     def process_pivot(F,d,pivot,i):
@@ -76,5 +77,11 @@ def lazy_pivoted_partial_cholesky(X,k,k_pivots,tol = 1e-5,seed = 203):
         g,F,d = process_pivot(F,d,pivot,i)
         pivot_remaining = pivot_remaining.at[pivot].set(False)
         chosen_pivots.append(pivot)
-        trace_history.append(jnp.sum(d))
-    return F,jnp.array(chosen_pivots),d,jnp.array(trace_history) 
+        current_trace = jnp.sum(d)
+        trace_history.append(current_trace)
+        if current_trace/init_trace<=tol:
+            chosen_pivots=chosen_pivots[:i]
+            trace_history=trace_history[:i]
+            F = F[:,:i]
+            break
+    return F,jnp.array(chosen_pivots),jnp.array(trace_history),d

@@ -52,12 +52,14 @@ class KernelModel():
             X,
             self.k,
             self.num_anchors,
-            tol = 1e-12,
+            tol = 1e-6,
             seed = seed
             )
+        self.num_anchors = len(chosen_anchors)
         self.anchors = X[chosen_anchors]
         self.anchors_fitted = True
         self.kmat = self.kvv(self.anchors,self.anchors)
+        self.weights = self.weights[:self.num_anchors]
         return F,chosen_anchors,d,trace_history
     
     def accumulate_system(
